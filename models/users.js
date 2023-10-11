@@ -1,8 +1,17 @@
 const usersModel = {
     getAll: `
-    SELECT
-    * 
-    FROM
+        SELECT
+        * 
+        FROM
         Users`,
+    
+    getByID : `
+        SELECT
+        *
+        FROM
+            Users
+        WHERE
+            id = ?          
+        `,
 }
 module.exports = usersModel;
