@@ -51,5 +51,53 @@ const listUserByID = async (req=request,res=response) => {
     if (conn) conn.end();
 }
 }
+const addUser = async (req = request, res = response) => {
+    const {
+                username,
+                email,
+                password,
+                name,
+                lastname,
+                phone_number = '',
+                role_id,
+                is_active = 1
+    } = req.body;
+    
+    /* 
+                username: 'admin'
+                email: 'admin@gmail.com'
+                password: '789'
+                name: 'Administrador'
+                lastname: 'Del Sitio'
+                phone_number: '555 555 55'
+                role_id: '1'
+                is_active: '1'
+    */
+    
+    if (!username || !email || !password || !name || !lastname || !role_id){
+        res.status(400).json({msg:'Missing information'});
+        return;
+}
+    const user = [username,email,password,name,lastname,phone_number,role_id,is_active]
+    let conn;
 
-module.exports = {listUsers, listUserByID};
+    try {
+        conn = await pool.getConnection()
+            const userAdded = await conn.query(
+                usersModel.addRow,
+                [...user],
+                {supportBigNumbers: true, bigNumberStrings: true}, (err) => {
+                if (err) throw err;
+        });
+        console.log(userAdded);
+        res.json(userAdded);
+    }catch (error) {
+        console.log(error);
+        res.status(500).json(error);
+
+    }finally {
+        if (conn) conn.end();
+    }
+}
+
+module.exports = {listUsers, listUserByID, addUser};
