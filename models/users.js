@@ -26,5 +26,21 @@ const usersModel = {
                 is_active
             ) VALUES (?,?,?,?,?,?,?,?)
             `,
+    getByUsername:`
+        SELECT
+            id 
+        FROM
+            Users
+        Where
+            username = ?
+    `,
+    getByEmail:`
+        SELECT
+            id 
+        FROM
+            Users
+        Where
+            email = ?
+    `,
 }
 module.exports = usersModel;
