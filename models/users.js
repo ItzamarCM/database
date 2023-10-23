@@ -42,7 +42,7 @@ const usersModel = {
         Where
             email = ?
     `,
-    updateUser: `
+    updateRow: `
         UPDATE Users
         SET 
             username = ?,
@@ -51,6 +51,7 @@ const usersModel = {
             name = ?,
             lastname = ?,
             phone_number = ?,
+            role_id = ?,
             is_active = ?
         WHERE
             id = ?

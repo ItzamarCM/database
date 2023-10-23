@@ -125,88 +125,94 @@ const addUser = async (req = request, res = response) => {
 }
 
 //Actualizar registros ----------------------------------------------------------
-const updateUser = async (req, res) => {
-    const { id } = req.params;
-    const userData = req.body; // Datos a actualizar
-  
-    if (!userData || Object.keys(userData).length === 0) {
-      return res.status(400).json({ msg: 'No data provided for update' });
+const updateUser = async (req = request, res = response) => {
+  let conn;
+  const{id} = req.params;
+
+const{
+    username,
+    email,
+    password,
+    name,
+    lastname,
+    phone_number,
+    role_id,
+    is_active,
+  } = req.body
+
+let user = [ //arreglo que manda información
+  username,
+  email,
+  password,
+  name,
+  lastname,
+  phone_number,
+  role_id,
+  is_active,
+]
+
+try{
+  conn = await pool.getConnection();
+  const [userExists] = await conn.query(
+    usersModel.getByID,
+    [id],
+    (err) => {throw err;}
+  )
+    if (!userExists || userExists.is_active == 0){
+      res.status(404).json({msg:'User not found' });
+      return;
     }
-  
-    let conn;
-    try {
-      conn = await pool.getConnection();
-  
-      // Verificar si el usuario existe
-      const [existingUser] = await conn.query(usersModel.getByID, [id]);
-      if (!existingUser) {
-        return res.status(404).json({ msg: 'User not found' });
-      }
-  
-      // Realiza las validaciones necesarias, por ejemplo, que el correo o el nombre de usuario no estén en uso
-      
-      if (userData.username) {
-        const [existingUserByUsername] = await conn.query(
-          usersModel.getByUsername,
-          [userData.username]
-        );
-        if (existingUserByUsername && existingUserByUsername.id !== id) {
-          return res.status(409).json({ msg: 'Username already in use' });
-        }
-      }
-      if (userData.email) {
-        const [existingUserByEmail] = await conn.query(
-          usersModel.getByEmail,
-          [userData.email]
-        );
-        if (existingUserByEmail && existingUserByEmail.id !== id) {
-          return res.status(409).json({ msg: 'Email already in use' });
-        }
-      }
-  
-      // Realiza la actualización de los campos permitidos
-      const allowedFields = ['username', 'email', 'password', 'name', 'lastname', 'phone_number', 'is_active'];
-      const updateData = {};
-  
-      allowedFields.forEach((field) => {
-        if (userData[field] !== undefined) {
-          updateData[field] = userData[field];
-        }
-      });
-  
-      if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ msg: 'No valid fields to update' });
-      }
-  
-      // Utiliza la consulta updateUser para realizar la actualización
-      const result = await conn.query(
-        usersModel.updateUser,
-        [
-          updateData.username,
-          updateData.email,
-          updateData.password, // Actualizar contraseña
-          updateData.name,
-          updateData.lastname,
-          updateData.phone_number,
-          updateData.is_active,
-          id
-        ]
-      );
-  
-      if (result.affectedRows === 0) {
-        return res.status(500).json({ msg: 'Failed to update user' });
-      }
-  
-      return res.json({ msg: 'User updated successfully' });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json(error);
-    } finally {
-      if (conn) conn.end();
+
+    if (username == userExists.username){
+      res.status(404).json({msg:'Username already exists'});
+      return;
     }
-  };
-  
-//DELETE
+    
+    if (email == userExists.email){
+      res.status(404).json({msg:'Emaile already exists'});
+      return;
+    }
+
+
+let oldUser = [
+  userExists.username,
+  userExists.email,
+  userExists.password,
+  userExists.name,
+  userExists.lastname,
+  userExists.phone_number,
+  userExists.role_id,
+  userExists.is_active,
+]
+
+user.forEach((userData, index) => { //ciclo para leer los campos a actualizar del arreglo usuario
+  if (!userData) user [index] = oldUser[index]; //userData lee cada uno, si no lo manda toma el de la base de datos
+})
+
+const [userUpdated] = conn.query( //para rellenar e insertar
+  usersModel.updateRow,
+  [...user, id],
+  (err) => {
+    throw err;
+  }
+)
+
+if (userUpdated.affectedRows == 0){
+  throw new Error('User not updated');
+}
+
+res.json({msg: 'User updated succesfully'});
+
+  }catch (error){
+    console.error(error);
+    res.status(500).json(error);
+
+  }finally{
+    if (conn)conn.end();
+  }
+};
+
+//DELETE -------------------------------------------------------------------------------------
 
 const deleteUser= async (req = request, res = response) => {
   let conn;
