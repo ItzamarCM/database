@@ -1,4 +1,5 @@
 const {request, response} = require('express');
+const bcrypt = require('bcrypt');
 const usersModel = require('../models/users');
 const pool = require('../db');
 
@@ -51,6 +52,8 @@ const listUserByID = async (req=request,res=response) => {
     if (conn) conn.end();
 }
 }
+
+// Agregar Usuario --------------------------------------------------------------------
 const addUser = async (req = request, res = response) => {
     const {
                 username,
@@ -78,7 +81,11 @@ const addUser = async (req = request, res = response) => {
         res.status(400).json({msg:'Missing information'});
         return;
 }
-    const user = [username,email,password,name,lastname,phone_number,role_id,is_active]
+
+const saltRounds = 10;
+const passwordHash = await bcrypt.hash(password,saltRounds);
+
+    const user = [username,email,passwordHash,name,lastname,phone_number,role_id,is_active]
     let conn;
 
     try {
