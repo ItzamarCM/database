@@ -163,15 +163,26 @@ try{
       return;
     }
 
-    if (username == userExists.username){
-      res.status(404).json({msg:'Username already exists'});
+// Usuario -----------------------------------------------------------------------------
+    const [usernameUser] = await conn.query(
+      usersModel.getByUsername,
+      [username],
+      (err) => {if (err) throw err;}
+      );
+      if (usernameUser){
+       res.status(409).json({msg:`User with username ${username} already exist`});
+       return;
+      }
+// email -------------------------------------------------------------------------------
+      const [emailUser] = await conn.query(
+      usersModel.getByEmail,
+      [email],
+      (err) => {if (err) throw err;}
+      );
+      if (emailUser){
+      res.status(409).json({msg:`User with username ${email} already exist`});
       return;
-    }
-    
-    if (email == userExists.email){
-      res.status(404).json({msg:'Emaile already exists'});
-      return;
-    }
+      }
 
 
 let oldUser = [
@@ -189,7 +200,7 @@ user.forEach((userData, index) => { //ciclo para leer los campos a actualizar de
   if (!userData) user [index] = oldUser[index]; //userData lee cada uno, si no lo manda toma el de la base de datos
 })
 
-const [userUpdated] = conn.query( //para rellenar e insertar
+const userUpdated = conn.query( //para rellenar e insertar
   usersModel.updateRow,
   [...user, id],
   (err) => {
