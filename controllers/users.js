@@ -134,7 +134,11 @@ const passwordHash = await bcrypt.hash(password,saltRounds);
 //Actualizar registros ----------------------------------------------------------
 const updateUser = async (req = request, res = response) => {
   let conn;
-  const{id} = req.params;
+  const {id} = req.params;
+
+  if (isNaN(id)){     //NaN = Not a Number /No es un numero
+    res.status(400).json({msg: 'Invalid ID'});
+}
 
 const{
     username,
@@ -235,6 +239,11 @@ res.json({msg: 'User updated succesfully'});
 const deleteUser= async (req = request, res = response) => {
   let conn;
   const {id} =req.params;
+
+  if (isNaN(id)){     //NaN = Not a Number /No es un numero
+    res.status(400).json({msg: 'Invalid ID'});
+}
+
 try{
   conn = await pool.getConnection();
   const [userExists] = await conn.query(
@@ -265,5 +274,50 @@ res.json({msg: 'User deleted succesfully'});
   }
 }
 
+const signInUser = async (req = request,res = response) =>{
+  const {username,password} = req.body;
 
-module.exports = {listUsers, listUserByID, addUser, updateUser, deleteUser};
+  let conn;
+
+  try {
+
+    conn = await pool.getConnection();
+
+    const [user] = await conn.query(
+      usersModel.getByUsername,
+      [username],
+      (err) => {throw err;}
+    );
+    if (!user || user.is_active == 0){
+      res.status(404).json({msg: 'Wrong username or password'});
+      return;
+    }
+
+    const passwordOk = await bcrypt.compare(password,user.password);
+    if (!passwordOk){
+      res.status(404).json({msg: 'Wrong username or password'});
+      return;
+    }
+
+    delete user.password;
+    delete user.created_atob;
+    delete user.updated_at;
+
+    res.json(user);
+
+  }catch(error){
+    console.log(error);
+    res.status(500).json(error);
+  }finally{
+    if(conn) conn.end();
+  }
+}
+
+module.exports = {
+  listUsers, 
+  listUserByID, 
+  addUser, 
+  updateUser, 
+  deleteUser,
+  signInUser
+};
