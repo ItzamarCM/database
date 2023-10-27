@@ -151,10 +151,18 @@ const{
     is_active,
   } = req.body
 
+
+let passwordHash //------------- Cifrado de contraseña en actualización
+  if(password) { 
+    const saltRounds = 10;
+    passwordHash = await bcrypt.hash(password, saltRounds);
+  }
+
+
 let user = [ //arreglo que manda información
   username,
   email,
-  password,
+  passwordHash,
   name,
   lastname,
   phone_number,
